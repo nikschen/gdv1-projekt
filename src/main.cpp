@@ -15,6 +15,7 @@ namespace
         private:
 
         //own variables
+            bool m_aTetrominoIsMoving;
             float m_SquareEdgeLength;
             BHandle m_pFlatLineTetrominoMesh;     
             BHandle m_pSquareTetrominoMesh;     
@@ -24,8 +25,19 @@ namespace
             BHandle m_pLeftHandedZShapedTetrominoMesh;     
             BHandle m_pRightHandedZShapedTetrominoMesh;     
 
+
+            enum MeshType {
+                FLATLINED,
+                SQUARE,
+                T_SHAPED,
+                LEFT_HANDED_L_SHAPE,
+                RIGHT_HANDED_L_SHAPE,
+                LEFT_HANDED_Z_SHAPE,
+                RIGHT_HANDED_Z_SHAPE,
+            };
             
         //own functions
+            //Create Meshes
             void CreateFlatLinedTetromino(BHandle* _ppMesh);
             void CreateSquareTetromino(BHandle* _ppMesh);
             void CreateTShapedTetromino(BHandle* _ppMesh);
@@ -33,6 +45,10 @@ namespace
             void CreateRightHandedLShapedTetromino(BHandle* _ppMesh);
             void CreateLeftHandedZShapedTetromino(BHandle* _ppMesh);
             void CreateRightHandedZShapedTetromino(BHandle* _ppMesh);
+
+            //Logic
+            void SpawnRandomTetromino();
+            void DrawTetromino(MeshType _meshType);
 
 
         //YoshiX-related
@@ -42,6 +58,7 @@ namespace
             virtual bool InternOnCreateMeshes();
             virtual bool InternOnReleaseMeshes();
             virtual bool InternOnResize(int _Width, int _Height);
+            virtual bool InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown);
             virtual bool InternOnUpdate();
             virtual bool InternOnFrame();
 
@@ -52,7 +69,8 @@ namespace
 namespace
 {
     CApplication::CApplication()
-        : m_FieldOfViewY        (60.0f)
+        : m_aTetrominoIsMoving  (false)
+        , m_FieldOfViewY        (60.0f)
         , m_pFlatLineTetrominoMesh  (nullptr)
         , m_pSquareTetrominoMesh  (nullptr)
         , m_pTShapedTetrominoMesh  (nullptr)
@@ -570,6 +588,52 @@ namespace
         CreateMesh(MeshInfo, _ppMesh);
     }
 
+    void CApplication::SpawnRandomTetromino()
+    {
+        //zahl zwischen 0 und 6
+        std::srand(std::time(nullptr));
+        int randomNmb = std::rand() % 7;
+        
+    }
+
+    void CApplication::DrawTetromino(MeshType _meshType)
+    {
+        float WorldMatrix[16];
+        BHandle chosenMesh = nullptr;
+
+        switch (_meshType)
+        {
+            case MeshType::FLATLINED:
+                chosenMesh = m_pFlatLineTetrominoMesh;
+                break;
+            case MeshType::SQUARE:
+                chosenMesh = m_pSquareTetrominoMesh;
+                break;
+            case MeshType::T_SHAPED:
+                chosenMesh = m_pTShapedTetrominoMesh;
+                break;
+            case MeshType::LEFT_HANDED_L_SHAPE:
+                chosenMesh = m_pLeftHandedLShapedTetrominoMesh;
+                break;
+            case MeshType::RIGHT_HANDED_L_SHAPE:
+                chosenMesh = m_pRightHandedLShapedTetrominoMesh;
+                break;
+            case MeshType::LEFT_HANDED_Z_SHAPE:
+                chosenMesh = m_pLeftHandedZShapedTetrominoMesh;
+                break;
+            case MeshType::RIGHT_HANDED_Z_SHAPE:
+                chosenMesh = m_pRightHandedZShapedTetrominoMesh;
+                break;
+            default:
+                chosenMesh = m_pSquareTetrominoMesh;
+                break;
+        };
+        GetTranslationMatrix(0.0f, 0.0f, 0.0f, WorldMatrix);
+        SetWorldMatrix(WorldMatrix);
+
+        DrawMesh(chosenMesh);
+    }
+
     // -----------------------------------------------------------------------------
 
     bool CApplication::InternOnCreateMeshes()
@@ -588,6 +652,13 @@ namespace
 
     bool CApplication::InternOnReleaseMeshes()
     {
+        ReleaseMesh(m_pFlatLineTetrominoMesh);
+        ReleaseMesh(m_pSquareTetrominoMesh);
+        ReleaseMesh(m_pTShapedTetrominoMesh);
+        ReleaseMesh(m_pLeftHandedLShapedTetrominoMesh);
+        ReleaseMesh(m_pRightHandedLShapedTetrominoMesh);
+        ReleaseMesh(m_pLeftHandedZShapedTetrominoMesh);
+        ReleaseMesh(m_pRightHandedZShapedTetrominoMesh);
         return true;
     }
 
@@ -647,41 +718,24 @@ namespace
         // -----------------------------------------------------------------------------
         // Set the position of the mesh in the world and draw it.
         // -----------------------------------------------------------------------------
-        GetTranslationMatrix(0.0f, 0.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
+        if (!m_aTetrominoIsMoving)
+        {
+            SpawnRandomTetromino();
 
-        DrawMesh(m_pLeftHandedLShapedTetrominoMesh);
+        }
 
+        return true;
+    }
 
-        GetTranslationMatrix(10.0f, 0.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pRightHandedLShapedTetrominoMesh);
-
-        GetTranslationMatrix(0.0f, 5.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pFlatLineTetrominoMesh);
-
-        GetTranslationMatrix(10.0f, 5.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pSquareTetrominoMesh);
-
-        GetTranslationMatrix(-10.0f, 5.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pLeftHandedZShapedTetrominoMesh);
-        
-        GetTranslationMatrix(-10.0f, 0.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pRightHandedZShapedTetrominoMesh);
-
-        GetTranslationMatrix(0.0f, -5.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(m_pTShapedTetrominoMesh);
+    bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
+    {
+        // -----------------------------------------------------------------------------
+        // Pressing the 'Space' key implies the condition to become true.
+        // -----------------------------------------------------------------------------
+        if (_Key == ' ')
+        {
+            std::cout << "Jump" << std::endl;
+        }
 
         return true;
     }
