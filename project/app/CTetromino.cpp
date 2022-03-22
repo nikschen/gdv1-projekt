@@ -6,14 +6,14 @@
 CTetromino::CTetromino(ETetrominoShape _shape, float _distanceMiddleToLeftMostX, float _distanceMiddleToRightMostX, float _distanceMiddleToHighestY, float _distanceMiddleToLowestY)
     : m_isCurrentActiveTetromino    (true)
     , m_shape                       (_shape)
-    , m_middlePointX                (0.0f)
-    , m_middlePointY                (0.0f)
+    , m_middlePointX                (0)
+    , m_middlePointY                (0)
     , m_distanceMiddleToLeftMostX   (_distanceMiddleToLeftMostX)
     , m_distanceMiddleToRightMostX  (_distanceMiddleToRightMostX)
     , m_distanceMiddleToHighestY    (_distanceMiddleToHighestY)
     , m_distanceMiddleToLowestY     (_distanceMiddleToLowestY)
-    , m_squareEdgeLength            (1.0f)
-    , m_zRotation                   (0.0f)
+    , m_squareEdgeLength            (1)
+    , m_zRotation                   (0)
 {
 }
 
@@ -55,6 +55,26 @@ float CTetromino::GetMiddleY()
 float CTetromino::GetRotationZ()
 {
     return m_zRotation;
+}
+
+float CTetromino::GetDistanceMiddleToLeftMostX()
+{
+    return m_distanceMiddleToLeftMostX;
+}
+
+float CTetromino::GetDistanceMiddleToRightMostX()
+{
+    return m_distanceMiddleToRightMostX;
+}
+
+float CTetromino::GetDistanceMiddleToHighestY()
+{
+    return m_distanceMiddleToHighestY;
+}
+
+float CTetromino::GetDistanceMiddleToLowestY()
+{
+    return m_distanceMiddleToLowestY;
 }
 
 void CTetromino::SetMiddleX(float _middleX)

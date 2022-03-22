@@ -35,7 +35,11 @@ namespace
 
             //Gameobjects
             CTetromino* m_activeTetromino;
+            float m_leftBorderX;
+            float m_rightBorderX;
+            float m_bottomBorderY;
             
+
             //Helper variables
             time_t m_lastTimeStemp;
             time_t m_tickLength; //in ms; determines game speed
@@ -45,9 +49,10 @@ namespace
         //-----------------------------------------------------------------------------
            
             //Logic
+            void CheckForCollisions();
             void ChooseRandomTetromino();
-            void SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape);
             void DrawLevelBorders();
+            void SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape);
 
         //-----------------------------------------------------------------------------
         // YoshiX-related variables
@@ -76,20 +81,23 @@ namespace
 #pragma region application_startUp 
 
     CApplication::CApplication()
-    :m_pLeftAndRightLevelBorderMesh     (nullptr)
-    ,m_pTopAndBottomLevelBorderMesh     (nullptr)
-    ,m_pFlatLineTetrominoMesh           (nullptr)
-    ,m_pSquareTetrominoMesh             (nullptr)
-    ,m_pTShapedTetrominoMesh            (nullptr)
-    ,m_pLeftHandedLShapedTetrominoMesh  (nullptr)
-    ,m_pRightHandedLShapedTetrominoMesh (nullptr)
-    ,m_pLeftHandedZShapedTetrominoMesh  (nullptr)
-    ,m_pRightHandedZShapedTetrominoMesh (nullptr)
-    ,m_activeTetromino                  (nullptr)
-    ,m_pActiveTetrominoMesh             (nullptr)
-    ,m_lastTimeStemp                    (0)
-    ,m_tickLength                       (500)
-    ,m_FieldOfViewY                     (60.0f)
+    : m_pLeftAndRightLevelBorderMesh     (nullptr)
+    , m_pTopAndBottomLevelBorderMesh     (nullptr)
+    , m_pFlatLineTetrominoMesh           (nullptr)
+    , m_pSquareTetrominoMesh             (nullptr)
+    , m_pTShapedTetrominoMesh            (nullptr)
+    , m_pLeftHandedLShapedTetrominoMesh  (nullptr)
+    , m_pRightHandedLShapedTetrominoMesh (nullptr)
+    , m_pLeftHandedZShapedTetrominoMesh  (nullptr)
+    , m_pRightHandedZShapedTetrominoMesh (nullptr)
+    , m_activeTetromino                  (nullptr)
+    , m_pActiveTetrominoMesh             (nullptr)
+    , m_leftBorderX                      (-5)
+    , m_rightBorderX                     (5)
+    , m_bottomBorderY                    (-20)
+    , m_lastTimeStemp                    (0)
+    , m_tickLength                       (500)
+    , m_FieldOfViewY                     (60)
     {
     }
 
@@ -138,8 +146,6 @@ namespace
         return true;
     }
 
-    // -----------------------------------------------------------------------------
-
     bool CApplication::InternOnReleaseMeshes()
     {
         ReleaseMesh(m_pFlatLineTetrominoMesh);
@@ -157,6 +163,22 @@ namespace
 #pragma endregion
 
 #pragma region gameLogic
+    void CApplication::CheckForCollisions()
+    {
+        ///WIP
+        /*if (m_activeTetromino->GetLeftMostX() < m_leftBorderX)
+        {
+            float currentMiddleX = m_activeTetromino->GetMiddleX();
+
+            m_activeTetromino->SetMiddleX(currentMiddleX+currentMiddleX-m_leftBorderX);
+        }
+        if (m_activeTetromino->GetRightMostX() > m_rightBorderX)
+        {
+            float currentMiddleX = m_activeTetromino->GetMiddleX();
+            float distanceBetweenRightMostXAndMiddleX = m_activeTetromino->GetDistanceMiddleToRightMostX();
+            m_activeTetromino->SetMiddleX(currentMiddleX - distanceBetweenRightMostXAndMiddleX);
+        }*/
+    }
     void CApplication::ChooseRandomTetromino()
     {
         //zahl zwischen 0 und 6
@@ -317,9 +339,9 @@ namespace
             if (timeDifference >= m_tickLength)
             {
                 m_lastTimeStemp = (time_t)time(0);
-                std::cout << "Vor Move" << roundf(m_activeTetromino->GetMiddleY()) << std::endl;
+                std::cout << "Vor Move" << m_activeTetromino->GetMiddleY() << std::endl;
                 m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
-                std::cout << "Nach Move" << roundf(m_activeTetromino->GetMiddleY()) << std::endl;
+                std::cout << "Nach Move" << m_activeTetromino->GetMiddleY() << std::endl;
                 //CheckForCollisions();
             }
                 

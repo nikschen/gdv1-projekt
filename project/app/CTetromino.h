@@ -53,6 +53,11 @@ public:
     float GetMiddleX();
     float GetMiddleY();
     float GetRotationZ();
+    float GetDistanceMiddleToLeftMostX();
+    float GetDistanceMiddleToRightMostX();
+    float GetDistanceMiddleToHighestY();
+    float GetDistanceMiddleToLowestY();
+
     void SetMiddleX(float _middleX);
     void SetMiddleY(float _middleY);
     void RotateTetromino(bool _rotateClockwise);
