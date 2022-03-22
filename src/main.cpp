@@ -1,7 +1,10 @@
 #include <iostream>
 #include "yoshix_fix_function.h"
+#include "../project/app/CTetromino.h"
+#include "../project/app/CMeshCreator.h"
 
 using namespace gfx;
+const int ESC = 27;
 
 namespace
 {
@@ -14,45 +17,47 @@ namespace
 
         private:
 
-        //own variables
-            bool m_aTetrominoIsMoving;
-            float m_SquareEdgeLength;
+        //-----------------------------------------------------------------------------
+        // own variables
+        //-----------------------------------------------------------------------------
+
+            //Meshes
+            BHandle m_pLeftAndRightLevelBorderMesh;     
+            BHandle m_pTopAndBottomLevelBorderMesh;     
             BHandle m_pFlatLineTetrominoMesh;     
             BHandle m_pSquareTetrominoMesh;     
             BHandle m_pTShapedTetrominoMesh;     
             BHandle m_pLeftHandedLShapedTetrominoMesh;     
             BHandle m_pRightHandedLShapedTetrominoMesh;    
             BHandle m_pLeftHandedZShapedTetrominoMesh;     
-            BHandle m_pRightHandedZShapedTetrominoMesh;     
+            BHandle m_pRightHandedZShapedTetrominoMesh;
+            BHandle m_pActiveTetrominoMesh;
 
-
-            enum MeshType {
-                FLATLINED,
-                SQUARE,
-                T_SHAPED,
-                LEFT_HANDED_L_SHAPE,
-                RIGHT_HANDED_L_SHAPE,
-                LEFT_HANDED_Z_SHAPE,
-                RIGHT_HANDED_Z_SHAPE,
-            };
+            //Gameobjects
+            CTetromino* m_activeTetromino;
             
-        //own functions
-            //Create Meshes
-            void CreateFlatLinedTetromino(BHandle* _ppMesh);
-            void CreateSquareTetromino(BHandle* _ppMesh);
-            void CreateTShapedTetromino(BHandle* _ppMesh);
-            void CreateLeftHandedLShapedTetromino(BHandle* _ppMesh);
-            void CreateRightHandedLShapedTetromino(BHandle* _ppMesh);
-            void CreateLeftHandedZShapedTetromino(BHandle* _ppMesh);
-            void CreateRightHandedZShapedTetromino(BHandle* _ppMesh);
-
+            //Helper variables
+            time_t m_lastTimeStemp;
+            time_t m_tickLength; //in ms; determines game speed
+            
+        //-----------------------------------------------------------------------------
+        // own functions
+        //-----------------------------------------------------------------------------
+           
             //Logic
-            void SpawnRandomTetromino();
-            void DrawTetromino(MeshType _meshType);
+            void ChooseRandomTetromino();
+            void SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape);
+            void DrawLevelBorders();
 
-
-        //YoshiX-related
+        //-----------------------------------------------------------------------------
+        // YoshiX-related variables
+        //-----------------------------------------------------------------------------
             float   m_FieldOfViewY; // Vertical view angle of the camera.
+
+
+        //-----------------------------------------------------------------------------
+        // YoshiX-related functions
+        //-----------------------------------------------------------------------------
             virtual bool InternOnStartup();
             virtual bool InternOnShutdown();
             virtual bool InternOnCreateMeshes();
@@ -68,27 +73,30 @@ namespace
 
 namespace
 {
+#pragma region application_startUp 
+
     CApplication::CApplication()
-        : m_aTetrominoIsMoving  (false)
-        , m_FieldOfViewY        (60.0f)
-        , m_pFlatLineTetrominoMesh  (nullptr)
-        , m_pSquareTetrominoMesh  (nullptr)
-        , m_pTShapedTetrominoMesh  (nullptr)
-        , m_pLeftHandedLShapedTetrominoMesh (nullptr)
-        , m_pRightHandedLShapedTetrominoMesh (nullptr)
-        , m_pLeftHandedZShapedTetrominoMesh (nullptr)
-        , m_pRightHandedZShapedTetrominoMesh (nullptr)
-        , m_SquareEdgeLength      (1.0f)
+    :m_pLeftAndRightLevelBorderMesh     (nullptr)
+    ,m_pTopAndBottomLevelBorderMesh     (nullptr)
+    ,m_pFlatLineTetrominoMesh           (nullptr)
+    ,m_pSquareTetrominoMesh             (nullptr)
+    ,m_pTShapedTetrominoMesh            (nullptr)
+    ,m_pLeftHandedLShapedTetrominoMesh  (nullptr)
+    ,m_pRightHandedLShapedTetrominoMesh (nullptr)
+    ,m_pLeftHandedZShapedTetrominoMesh  (nullptr)
+    ,m_pRightHandedZShapedTetrominoMesh (nullptr)
+    ,m_activeTetromino                  (nullptr)
+    ,m_pActiveTetrominoMesh             (nullptr)
+    ,m_lastTimeStemp                    (0)
+    ,m_tickLength                       (500)
+    ,m_FieldOfViewY                     (60.0f)
     {
     }
 
-    // -----------------------------------------------------------------------------
 
     CApplication::~CApplication()
     {
     }
-
-    // -----------------------------------------------------------------------------
 
     bool CApplication::InternOnStartup()
     {
@@ -106,545 +114,27 @@ namespace
         return true;
     }
 
-    // -----------------------------------------------------------------------------
-
     bool CApplication::InternOnShutdown()
     {
         return true;
     }
-
-
-    // -----------------------------------------------------------------------------
     
-    void CApplication::CreateFlatLinedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {    0 * edgeLength,      0 * edgeLength,     0 * edgeLength},
-            {   -2 * edgeLength,      0 * edgeLength,     0 * edgeLength},
-            {   -2 * edgeLength,     -1 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,     -1 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,      0 * edgeLength,     0 * edgeLength},
-        };
+#pragma endregion
 
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  0,  1,  2, },
-            {  0,  2,  3, },
-            {  0,  3,  4, },
-        };
-
-        float colors[][4] =
-        {
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 4.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];                   
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 5;
-        MeshInfo.m_NumberOfIndices = 9;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-    
-    // -----------------------------------------------------------------------------
-
-    void CApplication::CreateSquareTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {    0 * edgeLength,       0 * edgeLength,     0 * edgeLength},
-            {    0 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,       0 * edgeLength,     0 * edgeLength},
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  3,  0,  1, },
-            {  3,  1,  2, },
-        };
-
-        float colors[][4] =
-        {
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 2.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 3.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 4;
-        MeshInfo.m_NumberOfIndices = 6;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-
-    // -----------------------------------------------------------------------------
-
-    void CApplication::CreateTShapedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {     0 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //0
-            {    -1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //1
-            {    -1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //2
-            {     2 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //3
-            {     2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //4
-            {     1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //5
-            {     1 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //6
-            {     0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //7
-
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  0,  1,  2, },
-            {  0,  2,  3, },
-            
-            {  5,  0,  3, },
-            {  5,  3,  4, },
-            
-            {  6,  7,  0, },
-            {  6,  0,  5, },
-        };
-
-        float colors[][4] =
-        {
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 0.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 1.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 2.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 3.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 4.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 5.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 6.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 7.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 8;
-        MeshInfo.m_NumberOfIndices = 18;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-    
-    // -----------------------------------------------------------------------------
-    
-    void CApplication::CreateLeftHandedLShapedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {      0 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //0
-            {      0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //1
-            {     -1 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //2
-            {     -1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //3
-            {      2 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //4
-            {      2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //5
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  1,  2,  3, },
-            {  1,  3,  0, },
-            {  0,  3,  5, },
-            {  5,  3,  4, },
-
-        };
-
-        float colors[][4] =
-        {
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 4.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 5.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 6;
-        MeshInfo.m_NumberOfIndices = 12;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-
-    // -----------------------------------------------------------------------------
-
-    void CApplication::CreateRightHandedLShapedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {       0 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //0
-            {      -2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //1
-            {      -2 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //2
-            {       1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //3
-            {       1 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //4
-            {       0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //5
-
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  0,  1,  2, },
-            {  0,  2,  3, },
-            {  0,  3,  4, },
-            {  0,  4,  5, },
-        };
-
-        float colors[][4] =
-        {
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 0.
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 1.
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 2.
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 3.
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 4.
-            { 255.0f, 75.0f, 64.0f, 1.0f, },        // Color of vertex 5.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 6;
-        MeshInfo.m_NumberOfIndices = 12;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-
-    // -----------------------------------------------------------------------------
-
-    void CApplication::CreateLeftHandedZShapedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {       0 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //0
-            {      -1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //1
-            {      -1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //2
-            {       1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //3
-            {       1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //4
-            {       2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //5
-            {       2 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //6
-            {       0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //7
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  0,  1,  2, },
-            {  0,  2,  3, },
-            {  0,  3,  4, },
-            {  4,  7,  0, },
-            {  4,  6,  7, },
-            {  4,  5,  6, },
-
-
-        };
-
-        float colors[][4] =
-        {
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 4.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 5.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 6.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 7.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 8;
-        MeshInfo.m_NumberOfIndices = 18;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-
-    // -----------------------------------------------------------------------------
-
-    void CApplication::CreateRightHandedZShapedTetromino(BHandle* _ppMesh)
-    {
-        float edgeLength = m_SquareEdgeLength;
-        //x,y,z x=horizontal y=vertical z=depth
-        float vertices[][3] =
-        {
-            {       0 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //0
-            {       0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //1
-            {      -2 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //2
-            {      -2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //3
-            {      -1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //4
-            {      -1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //5
-            {       1 * edgeLength,      -1 * edgeLength,     0 * edgeLength}, //6
-            {       1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //7
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the topology of the mesh via indices. An index addresses a vertex from
-        // the array above. Three indices represent one triangle. When defining the 
-        // triangles of a mesh imagine that you are standing in front of the triangle 
-        // and looking to the center of the triangle. If the mesh represents a closed
-        // body such as a Square, your view position has to be outside of the body. Now
-        // define the indices of the addressed vertices of the triangle in counter-
-        // clockwise order.
-        // -----------------------------------------------------------------------------
-        int indices[][3] =
-        {
-            {  1,  2,  3, },
-            {  1,  3,  4, },
-            {  1,  4,  0, },
-
-            {  0,  4,  5, },
-            {  0,  5,  6, },
-            {  0,  6,  7, },
-
-
-        };
-
-        float colors[][4] =
-        {
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 0.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 1.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 2.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 3.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 4.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 5.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 6.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 7.
-        };
-
-        // -----------------------------------------------------------------------------
-        // Define the mesh and its material. The material defines the look of the
-        // surface covering the mesh. If the material should contain normals, colors, or
-        // texture coordinates then their number has to match the number of vertices.
-        // If you do not support normals in a mesh, YoshiX will not apply lighting to
-        // this mesh. A textured mesh always has to contain texture coordinates and a
-        // handle to a texture. A mesh always has to contain vertices and indices.
-        // -----------------------------------------------------------------------------
-        SMeshInfo MeshInfo;
-
-        MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
-        MeshInfo.m_pColors = &colors[0][0];
-        MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 8;
-        MeshInfo.m_NumberOfIndices = 18;
-        MeshInfo.m_pIndices = &indices[0][0];
-        MeshInfo.m_pTexture = nullptr;
-
-        CreateMesh(MeshInfo, _ppMesh);
-    }
-
-    void CApplication::SpawnRandomTetromino()
-    {
-        //zahl zwischen 0 und 6
-        std::srand(std::time(nullptr));
-        int randomNmb = std::rand() % 7;
-        
-    }
-
-    void CApplication::DrawTetromino(MeshType _meshType)
-    {
-        float WorldMatrix[16];
-        BHandle chosenMesh = nullptr;
-
-        switch (_meshType)
-        {
-            case MeshType::FLATLINED:
-                chosenMesh = m_pFlatLineTetrominoMesh;
-                break;
-            case MeshType::SQUARE:
-                chosenMesh = m_pSquareTetrominoMesh;
-                break;
-            case MeshType::T_SHAPED:
-                chosenMesh = m_pTShapedTetrominoMesh;
-                break;
-            case MeshType::LEFT_HANDED_L_SHAPE:
-                chosenMesh = m_pLeftHandedLShapedTetrominoMesh;
-                break;
-            case MeshType::RIGHT_HANDED_L_SHAPE:
-                chosenMesh = m_pRightHandedLShapedTetrominoMesh;
-                break;
-            case MeshType::LEFT_HANDED_Z_SHAPE:
-                chosenMesh = m_pLeftHandedZShapedTetrominoMesh;
-                break;
-            case MeshType::RIGHT_HANDED_Z_SHAPE:
-                chosenMesh = m_pRightHandedZShapedTetrominoMesh;
-                break;
-            default:
-                chosenMesh = m_pSquareTetrominoMesh;
-                break;
-        };
-        GetTranslationMatrix(0.0f, 0.0f, 0.0f, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-
-        DrawMesh(chosenMesh);
-    }
-
-    // -----------------------------------------------------------------------------
+#pragma region meshCreation
 
     bool CApplication::InternOnCreateMeshes()
     {
-        CreateFlatLinedTetromino(&m_pFlatLineTetrominoMesh);
-        CreateSquareTetromino(&m_pSquareTetrominoMesh);
-        CreateTShapedTetromino(&m_pTShapedTetrominoMesh);
-        CreateLeftHandedLShapedTetromino(&m_pLeftHandedLShapedTetrominoMesh);
-        CreateRightHandedLShapedTetromino(&m_pRightHandedLShapedTetrominoMesh);
-        CreateLeftHandedZShapedTetromino(&m_pLeftHandedZShapedTetrominoMesh);
-        CreateRightHandedZShapedTetromino(&m_pRightHandedZShapedTetrominoMesh);
+        CMeshCreator meshCreator = CMeshCreator();
+        meshCreator.CreateFlatLinedTetromino(&m_pFlatLineTetrominoMesh);
+        meshCreator.CreateSquareTetromino(&m_pSquareTetrominoMesh);
+        meshCreator.CreateTShapedTetromino(&m_pTShapedTetrominoMesh);
+        meshCreator.CreateLeftHandedLShapedTetromino(&m_pLeftHandedLShapedTetrominoMesh);
+        meshCreator.CreateRightHandedLShapedTetromino(&m_pRightHandedLShapedTetrominoMesh);
+        meshCreator.CreateLeftHandedZShapedTetromino(&m_pLeftHandedZShapedTetrominoMesh);
+        meshCreator.CreateRightHandedZShapedTetromino(&m_pRightHandedZShapedTetrominoMesh);
+        meshCreator.CreateLeftAndRightLevelBorder(&m_pLeftAndRightLevelBorderMesh);
+        meshCreator.CreateTopAndBottomLevelBorder(&m_pTopAndBottomLevelBorderMesh);
         return true;
     }
 
@@ -659,11 +149,109 @@ namespace
         ReleaseMesh(m_pRightHandedLShapedTetrominoMesh);
         ReleaseMesh(m_pLeftHandedZShapedTetrominoMesh);
         ReleaseMesh(m_pRightHandedZShapedTetrominoMesh);
+        ReleaseMesh(m_pLeftAndRightLevelBorderMesh);
+        ReleaseMesh(m_pTopAndBottomLevelBorderMesh);
         return true;
     }
 
-    // -----------------------------------------------------------------------------
+#pragma endregion
 
+#pragma region gameLogic
+    void CApplication::ChooseRandomTetromino()
+    {
+        //zahl zwischen 0 und 6
+        std::srand(std::time(nullptr));
+        int randomNmb = std::rand() % 7;
+        SpawnTetromino(CTetromino::ETetrominoShape(randomNmb));
+    }
+
+    void CApplication::SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape)
+    {
+
+        switch (_tetrominoShape)
+        {
+            case CTetromino::ETetrominoShape::FLATLINED:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 2.0f, 0.0f,1.0f);
+                m_pActiveTetrominoMesh = m_pFlatLineTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::SQUARE:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 0.0f, 2.0f, 0.0f, 2.0f);
+                m_pActiveTetrominoMesh = m_pSquareTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::T_SHAPED:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetrominoMesh = m_pTShapedTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::LEFT_HANDED_L_SHAPE:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetrominoMesh = m_pLeftHandedLShapedTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::RIGHT_HANDED_L_SHAPE:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 1.0f, 1.0f, 1.0f);
+                m_pActiveTetrominoMesh = m_pRightHandedLShapedTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::LEFT_HANDED_Z_SHAPE:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetrominoMesh = m_pLeftHandedZShapedTetrominoMesh;
+                break;
+            case CTetromino::ETetrominoShape::RIGHT_HANDED_Z_SHAPE:
+                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 1.0f, 1.0f, 1.0f);
+                m_pActiveTetrominoMesh = m_pRightHandedZShapedTetrominoMesh;
+                break;
+        };
+
+    }
+
+    void CApplication::DrawLevelBorders()
+    {
+        float WorldMatrix[16];
+        GetTranslationMatrix(0.0f, 0.0f, 0.0f, WorldMatrix);
+        SetWorldMatrix(WorldMatrix);
+        //Left Border
+        DrawMesh(m_pLeftAndRightLevelBorderMesh);
+        
+        //Top Border
+        DrawMesh(m_pTopAndBottomLevelBorderMesh); 
+
+        //Right Border
+        GetTranslationMatrix(55.0f, 0.0f, 0.0f, WorldMatrix);
+        SetWorldMatrix(WorldMatrix);
+        DrawMesh(m_pLeftAndRightLevelBorderMesh);
+        
+        //Bottom Border
+        GetTranslationMatrix(0.0f, -45.0f, 0.0f, WorldMatrix);
+        SetWorldMatrix(WorldMatrix);
+        DrawMesh(m_pTopAndBottomLevelBorderMesh);
+
+    }
+
+    bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
+    {
+        switch (_Key)
+        {
+            case 'A':
+                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::LEFT);
+                break;
+            case 'D':
+                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::RIGHT);
+                break;
+            case 'E':
+                m_activeTetromino->RotateTetromino(true);
+                break;
+            case 'Q':
+                m_activeTetromino->RotateTetromino(false);
+                break;
+            case ESC: //ESC key -> Nr 27
+                StopApplication();
+                break;    
+        }
+
+
+        return true;
+    }
+#pragma endregion
+
+#pragma region doPerFrame
     bool CApplication::InternOnResize(int _Width, int _Height)
     {
         float ProjectionMatrix[16];
@@ -682,7 +270,6 @@ namespace
         return true;
     }
 
-    // -----------------------------------------------------------------------------
 
     bool CApplication::InternOnUpdate()
     {
@@ -696,8 +283,8 @@ namespace
         // Define position and orientation of the camera in the world.
         // -----------------------------------------------------------------------------
         Eye[0] = 0.0f; At[0] = 0.0f; Up[0] = 0.0f;
-        Eye[1] = 0.0f; At[1] = 0.0f; Up[1] = 1.0f;
-        Eye[2] = -20.0f; At[2] = 0.0f; Up[2] = 0.0f;
+        Eye[1] = -10.0f; At[1] = -10.0f; Up[1] = 1.0f;
+        Eye[2] = -18.0f; At[2] = 0.0f; Up[2] = 0.0f;
 
         GetViewMatrix(Eye, At, Up, ViewMatrix);
 
@@ -707,43 +294,55 @@ namespace
         return true;
     }
 
-    // -----------------------------------------------------------------------------
 
     bool CApplication::InternOnFrame()
     {
-        float TranslationMatrix[16];
         float WorldMatrix[16];
-        float ScaleMatrix[16];
+        float RotationMatrix[16];
+        float TranslationMatrix[16];
 
+        DrawLevelBorders();
+        
         // -----------------------------------------------------------------------------
         // Set the position of the mesh in the world and draw it.
         // -----------------------------------------------------------------------------
-        if (!m_aTetrominoIsMoving)
+        if (m_activeTetromino==nullptr)
         {
-            SpawnRandomTetromino();
-
+            ChooseRandomTetromino();
+            m_lastTimeStemp = (time_t)time(0);
         }
+        else
+        {
+            time_t timeDifference=((time_t)time(0)- m_lastTimeStemp)*1000;
+            if (timeDifference >= m_tickLength)
+            {
+                m_lastTimeStemp = (time_t)time(0);
+                std::cout << "Vor Move" << roundf(m_activeTetromino->GetMiddleY()) << std::endl;
+                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
+                std::cout << "Nach Move" << roundf(m_activeTetromino->GetMiddleY()) << std::endl;
+                //CheckForCollisions();
+            }
+                
+            
+           
+        }
+        GetRotationZMatrix(m_activeTetromino->GetRotationZ(),RotationMatrix);
+        GetTranslationMatrix(m_activeTetromino->GetMiddleX(), m_activeTetromino->GetMiddleY(), 0.0f, TranslationMatrix);
+        MulMatrix(RotationMatrix, TranslationMatrix, WorldMatrix);
+        SetWorldMatrix(WorldMatrix);
+        
+        DrawMesh(m_pActiveTetrominoMesh);
 
         return true;
     }
 
-    bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
-    {
-        // -----------------------------------------------------------------------------
-        // Pressing the 'Space' key implies the condition to become true.
-        // -----------------------------------------------------------------------------
-        if (_Key == ' ')
-        {
-            std::cout << "Jump" << std::endl;
-        }
+#pragma endregion
 
-        return true;
-    }
 } // namespace
 
 void main()
 {
     CApplication Application;
 
-    RunApplication(800, 600, "YoshiX Tetris", &Application);
+    RunApplication(600, 800, "YoshiX Tetris", &Application);
 }

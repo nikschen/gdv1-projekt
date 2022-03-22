@@ -11,8 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\examples\cube_textured_lighted.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="CMeshCreator.cpp" />
+    <ClCompile Include="CTetromino.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CMeshCreator.h" />
+    <ClInclude Include="CTetromino.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{230EC6D4-CD39-4CED-BD1B-0069055FB04E}</ProjectGuid>
