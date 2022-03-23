@@ -1,5 +1,6 @@
 #pragma once
 #include <yoshix_fix_function.h>
+#include "CPoint.h"
 
 using namespace gfx;
 
@@ -21,9 +22,14 @@ public:
         RIGHT,
         DOWN
     };
+    CTetromino();
 
     CTetromino(
         ETetrominoShape _shape,
+        CPoint _middlePoint1,
+        CPoint _middlePoint2,
+        CPoint _middlePoint3,
+        CPoint _middlePoint4,
         float _distanceMiddleToLeftMostX, 
         float _distanceMiddleToRightMostX,
         float _distanceMiddleToHighestY,
@@ -36,6 +42,11 @@ public:
     ETetrominoShape m_shape;
     
 private:
+
+    CPoint m_middlePoint1;
+    CPoint m_middlePoint2;
+    CPoint m_middlePoint3;
+    CPoint m_middlePoint4;
     float m_middlePointX;
     float m_middlePointY;
     float m_distanceMiddleToLeftMostX;
@@ -62,6 +73,8 @@ public:
     void SetMiddleY(float _middleY);
     void RotateTetromino(bool _rotateClockwise);
     void MoveTetromino(EMoveDirection _direction);
+    void GetMiddlePoints(CPoint* _pMiddlePoints); 
+    void RotateMiddlePointsAroundZAxis(float _degrees);
 
 
 };

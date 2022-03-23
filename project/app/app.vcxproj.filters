@@ -4,9 +4,13 @@
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="CTetromino.cpp" />
     <ClCompile Include="CMeshCreator.cpp" />
+    <ClCompile Include="CFieldOfArea.cpp" />
+    <ClCompile Include="CPoint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTetromino.h" />
     <ClInclude Include="CMeshCreator.h" />
+    <ClInclude Include="CFieldOfArea.h" />
+    <ClInclude Include="CPoint.h" />
   </ItemGroup>
 </Project>

@@ -1,10 +1,15 @@
+#include <algorithm>
 #include <iostream>
 #include "yoshix_fix_function.h"
+#include "../project/app/CFieldOfArea.h"
 #include "../project/app/CTetromino.h"
 #include "../project/app/CMeshCreator.h"
 
 using namespace gfx;
 const int ESC = 27;
+const int ARROW_KEY_LEFT = 37;
+const int ARROW_KEY_RIGHT = 39;
+const int ARROW_KEY_DOWN = 40;
 
 namespace
 {
@@ -32,9 +37,11 @@ namespace
             BHandle m_pLeftHandedZShapedTetrominoMesh;     
             BHandle m_pRightHandedZShapedTetrominoMesh;
             BHandle m_pActiveTetrominoMesh;
+            BHandle m_pSingleTetrominoCubeMesh;
 
             //Gameobjects
-            CTetromino* m_activeTetromino;
+            CTetromino* m_pActiveTetromino;
+            bool m_area[20][10]; //true if occupied, false if not occupied
             float m_leftBorderX;
             float m_rightBorderX;
             float m_bottomBorderY;
@@ -42,17 +49,18 @@ namespace
 
             //Helper variables
             time_t m_lastTimeStemp;
-            time_t m_tickLength; //in ms; determines game speed
+            time_t m_gameTickLength; //in ms; determines game speed
             
         //-----------------------------------------------------------------------------
         // own functions
         //-----------------------------------------------------------------------------
            
-            //Logic
             void CheckForCollisions();
             void ChooseRandomTetromino();
             void DrawLevelBorders();
+            void DrawOccupationBlocks();
             void SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape);
+            void TurnIntoPieces();
 
         //-----------------------------------------------------------------------------
         // YoshiX-related variables
@@ -90,13 +98,15 @@ namespace
     , m_pRightHandedLShapedTetrominoMesh (nullptr)
     , m_pLeftHandedZShapedTetrominoMesh  (nullptr)
     , m_pRightHandedZShapedTetrominoMesh (nullptr)
-    , m_activeTetromino                  (nullptr)
+    , m_pActiveTetromino                 (nullptr)
+    , m_area                             {false}
     , m_pActiveTetrominoMesh             (nullptr)
-    , m_leftBorderX                      (-5)
-    , m_rightBorderX                     (5)
+    , m_pSingleTetrominoCubeMesh         (nullptr)
+    , m_leftBorderX                      (0)
+    , m_rightBorderX                     (10)
     , m_bottomBorderY                    (-20)
     , m_lastTimeStemp                    (0)
-    , m_tickLength                       (500)
+    , m_gameTickLength                   (500)
     , m_FieldOfViewY                     (60)
     {
     }
@@ -119,6 +129,7 @@ namespace
         float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f, };
 
         SetClearColor(ClearColor);
+
         return true;
     }
 
@@ -143,6 +154,7 @@ namespace
         meshCreator.CreateRightHandedZShapedTetromino(&m_pRightHandedZShapedTetrominoMesh);
         meshCreator.CreateLeftAndRightLevelBorder(&m_pLeftAndRightLevelBorderMesh);
         meshCreator.CreateTopAndBottomLevelBorder(&m_pTopAndBottomLevelBorderMesh);
+        meshCreator.CreateSingleTetrominoCube(&m_pSingleTetrominoCubeMesh);
         return true;
     }
 
@@ -157,6 +169,7 @@ namespace
         ReleaseMesh(m_pRightHandedZShapedTetrominoMesh);
         ReleaseMesh(m_pLeftAndRightLevelBorderMesh);
         ReleaseMesh(m_pTopAndBottomLevelBorderMesh);
+        ReleaseMesh(m_pSingleTetrominoCubeMesh);
         return true;
     }
 
@@ -165,19 +178,46 @@ namespace
 #pragma region gameLogic
     void CApplication::CheckForCollisions()
     {
-        ///WIP
-        /*if (m_activeTetromino->GetLeftMostX() < m_leftBorderX)
+        if (m_pActiveTetromino->GetLeftMostX() < m_leftBorderX)
         {
-            float currentMiddleX = m_activeTetromino->GetMiddleX();
-
-            m_activeTetromino->SetMiddleX(currentMiddleX+currentMiddleX-m_leftBorderX);
+            float currentMiddleX = m_pActiveTetromino->GetMiddleX();
+            float distanceMiddleToLeftMostX = m_pActiveTetromino->GetDistanceMiddleToLeftMostX();
+            float distanceBorderToMiddleX = m_leftBorderX - currentMiddleX;
+            float distanceToBeMoved = distanceMiddleToLeftMostX - abs(distanceBorderToMiddleX);
+            m_pActiveTetromino->SetMiddleX(currentMiddleX+distanceToBeMoved);
         }
-        if (m_activeTetromino->GetRightMostX() > m_rightBorderX)
+        if (m_pActiveTetromino->GetRightMostX() > m_rightBorderX)
         {
-            float currentMiddleX = m_activeTetromino->GetMiddleX();
-            float distanceBetweenRightMostXAndMiddleX = m_activeTetromino->GetDistanceMiddleToRightMostX();
-            m_activeTetromino->SetMiddleX(currentMiddleX - distanceBetweenRightMostXAndMiddleX);
-        }*/
+            float currentMiddleX = m_pActiveTetromino->GetMiddleX();
+            float distanceMiddleToRightMostX = m_pActiveTetromino->GetDistanceMiddleToRightMostX();
+            float distanceBorderToMiddleX = m_rightBorderX - currentMiddleX;
+            float distanceToBeMoved = distanceMiddleToRightMostX - abs(distanceBorderToMiddleX);
+            m_pActiveTetromino->SetMiddleX(currentMiddleX - distanceToBeMoved);
+        }
+        if (m_pActiveTetromino->GetLowestY() < m_bottomBorderY)
+        {
+            TurnIntoPieces();
+            m_pActiveTetromino = nullptr;
+        }
+
+        if (m_pActiveTetromino != nullptr)
+        {
+            CPoint middlePoints[4];
+            m_pActiveTetromino->GetMiddlePoints(middlePoints); //gets middlePoints described from a tetrominos middlePoint as the starting point
+            for (CPoint point : middlePoints)
+            {
+                int rowOfArea = abs((int)(m_pActiveTetromino->GetMiddleY() + point.m_y));
+                int columnOfArea =  (int)(m_pActiveTetromino->GetMiddleX() + point.m_x);
+                if (m_area[rowOfArea][columnOfArea])
+                {
+                    TurnIntoPieces();
+                    m_pActiveTetromino = nullptr;
+                    break;
+                }
+            }
+        }
+
+
     }
     void CApplication::ChooseRandomTetromino()
     {
@@ -189,45 +229,58 @@ namespace
 
     void CApplication::SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape)
     {
-
+        
         switch (_tetrominoShape)
         {
             case CTetromino::ETetrominoShape::FLATLINED:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 2.0f, 0.0f,1.0f);
+                m_pActiveTetromino= new CTetromino(_tetrominoShape, CPoint(-1.5,-0.5), CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(1.5,-0.5), 2.0f, 2.0f, 0.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pFlatLineTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::SQUARE:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 0.0f, 2.0f, 0.0f, 2.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(0.5,-0.5), CPoint(1.5,-0.5), CPoint(0.5,-1.5), CPoint(1.5,-1.5), 0.0f, 2.0f, 0.0f, 2.0f);
                 m_pActiveTetrominoMesh = m_pSquareTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::T_SHAPED:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(1.5,-0.5), CPoint(0.5,0.5), 1.0f, 2.0f, 1.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pTShapedTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::LEFT_HANDED_L_SHAPE:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-0.5,0.5), CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(1.5,-0.5), 1.0f, 2.0f, 1.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pLeftHandedLShapedTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::RIGHT_HANDED_L_SHAPE:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 1.0f, 1.0f, 1.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-1.5,-0.5), CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(0.5,0.5), 2.0f, 1.0f, 1.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pRightHandedLShapedTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::LEFT_HANDED_Z_SHAPE:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 1.0f, 2.0f, 1.0f, 1.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(0.5,0.5), CPoint(1.5,0.5), 1.0f, 2.0f, 1.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pLeftHandedZShapedTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::RIGHT_HANDED_Z_SHAPE:
-                m_activeTetromino = &CTetromino(_tetrominoShape, 2.0f, 1.0f, 1.0f, 1.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-1.5,0.5), CPoint(-0.5,0.5), CPoint(-0.5,-0.5), CPoint(0.5,-0.5), 2.0f, 1.0f, 1.0f, 1.0f);
                 m_pActiveTetrominoMesh = m_pRightHandedZShapedTetrominoMesh;
                 break;
         };
-
     }
+
+    void CApplication::TurnIntoPieces()
+    {
+         CPoint middlePoints[4];
+        m_pActiveTetromino->GetMiddlePoints(middlePoints); //gets middlePoints described from a tetrominos middlePoint as the starting point
+        for (CPoint point : middlePoints)
+        {
+            int rowOfArea = abs((int)(m_pActiveTetromino->GetMiddleY() + 1 + point.m_y));
+            int columnOfArea =(int)(m_pActiveTetromino->GetMiddleX() + point.m_x);
+            m_area[rowOfArea][columnOfArea] = true;
+        }
+    }
+
+    
 
     void CApplication::DrawLevelBorders()
     {
         float WorldMatrix[16];
-        GetTranslationMatrix(0.0f, 0.0f, 0.0f, WorldMatrix);
+        GetTranslationMatrix(5.0f, 0.0f, 0.0f, WorldMatrix);
         SetWorldMatrix(WorldMatrix);
         //Left Border
         DrawMesh(m_pLeftAndRightLevelBorderMesh);
@@ -236,39 +289,69 @@ namespace
         DrawMesh(m_pTopAndBottomLevelBorderMesh); 
 
         //Right Border
-        GetTranslationMatrix(55.0f, 0.0f, 0.0f, WorldMatrix);
+        GetTranslationMatrix(60.0f, 0.0f, 0.0f, WorldMatrix);
         SetWorldMatrix(WorldMatrix);
         DrawMesh(m_pLeftAndRightLevelBorderMesh);
         
         //Bottom Border
-        GetTranslationMatrix(0.0f, -45.0f, 0.0f, WorldMatrix);
+        GetTranslationMatrix(5.0f, -45.0f, 0.0f, WorldMatrix);
         SetWorldMatrix(WorldMatrix);
         DrawMesh(m_pTopAndBottomLevelBorderMesh);
 
     }
 
+    void CApplication::DrawOccupationBlocks()
+    {
+        float translationMatrix[16];
+        int row, column = 0;
+        for (row = 0; row < 20; row++)
+        {
+            for (column = 0; column < 10; column++)
+            {
+                if (m_area[row][column])
+                {
+                    GetTranslationMatrix(column, -row, 0, translationMatrix);
+                    SetWorldMatrix(translationMatrix);
+                    DrawMesh(m_pSingleTetrominoCubeMesh);
+                }
+            }
+        }
+    }
+
     bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
     {
-        switch (_Key)
+        if (_IsKeyDown && (m_pActiveTetromino!=nullptr || _Key==ESC))
         {
-            case 'A':
-                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::LEFT);
-                break;
-            case 'D':
-                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::RIGHT);
-                break;
-            case 'E':
-                m_activeTetromino->RotateTetromino(true);
-                break;
-            case 'Q':
-                m_activeTetromino->RotateTetromino(false);
-                break;
-            case ESC: //ESC key -> Nr 27
-                StopApplication();
-                break;    
+            switch (_Key)
+            {
+                case 'A': //move Tetromino to the left
+                case ARROW_KEY_LEFT: //move Tetromino to the left
+                    m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::LEFT);
+                    break;
+                case 'D': //move Tetromino to the right
+                case ARROW_KEY_RIGHT: //move Tetromino to the right
+                    m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::RIGHT);
+                    break;
+                case 'E': //rotate Tetromino clockwise
+                    m_pActiveTetromino->RotateTetromino(true);
+                    break;
+                case 'Q': //rotate Tetromino counter-clockwise
+                    m_pActiveTetromino->RotateTetromino(false);
+                    break;
+                case ' ': //force Tetromino down
+                case 'S': //force Tetromino down
+                case ARROW_KEY_DOWN: //force Tetromino down
+                    m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
+                    break;
+                case 'R': //Reset Game
+                    std::fill(&m_area[0][0], &m_area[0][0] + sizeof(m_area), false);
+                    m_pActiveTetromino=nullptr;
+                    break;
+                case ESC: //ESC key -> Nr 27
+                    StopApplication();
+                    break;    
+            }
         }
-
-
         return true;
     }
 #pragma endregion
@@ -304,7 +387,7 @@ namespace
         // -----------------------------------------------------------------------------
         // Define position and orientation of the camera in the world.
         // -----------------------------------------------------------------------------
-        Eye[0] = 0.0f; At[0] = 0.0f; Up[0] = 0.0f;
+        Eye[0] = 5.0f; At[0] = 5.0f; Up[0] = 0.0f;
         Eye[1] = -10.0f; At[1] = -10.0f; Up[1] = 1.0f;
         Eye[2] = -18.0f; At[2] = 0.0f; Up[2] = 0.0f;
 
@@ -328,7 +411,7 @@ namespace
         // -----------------------------------------------------------------------------
         // Set the position of the mesh in the world and draw it.
         // -----------------------------------------------------------------------------
-        if (m_activeTetromino==nullptr)
+        if (m_pActiveTetromino==nullptr)
         {
             ChooseRandomTetromino();
             m_lastTimeStemp = (time_t)time(0);
@@ -336,24 +419,23 @@ namespace
         else
         {
             time_t timeDifference=((time_t)time(0)- m_lastTimeStemp)*1000;
-            if (timeDifference >= m_tickLength)
+            if (timeDifference >= m_gameTickLength)
             {
                 m_lastTimeStemp = (time_t)time(0);
-                std::cout << "Vor Move" << m_activeTetromino->GetMiddleY() << std::endl;
-                m_activeTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
-                std::cout << "Nach Move" << m_activeTetromino->GetMiddleY() << std::endl;
-                //CheckForCollisions();
-            }
-                
-            
-           
+                m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
+            } 
         }
-        GetRotationZMatrix(m_activeTetromino->GetRotationZ(),RotationMatrix);
-        GetTranslationMatrix(m_activeTetromino->GetMiddleX(), m_activeTetromino->GetMiddleY(), 0.0f, TranslationMatrix);
-        MulMatrix(RotationMatrix, TranslationMatrix, WorldMatrix);
-        SetWorldMatrix(WorldMatrix);
-        
-        DrawMesh(m_pActiveTetrominoMesh);
+        CheckForCollisions();
+
+        if (m_pActiveTetromino != nullptr)
+        {
+            GetRotationZMatrix(m_pActiveTetromino->GetRotationZ(),RotationMatrix);
+            GetTranslationMatrix(m_pActiveTetromino->GetMiddleX(), m_pActiveTetromino->GetMiddleY(), 0.0f, TranslationMatrix);
+            MulMatrix(RotationMatrix, TranslationMatrix, WorldMatrix);
+            SetWorldMatrix(WorldMatrix);
+            DrawMesh(m_pActiveTetrominoMesh);
+        }
+        DrawOccupationBlocks();
 
         return true;
     }

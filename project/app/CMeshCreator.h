@@ -76,5 +76,10 @@ public:
     // -----------------------------------------------------------------------------
     void CreateTopAndBottomLevelBorder(BHandle* _ppMesh);
 
+    // -----------------------------------------------------------------------------
+    // Produces a single tetromino cube piece
+    // -----------------------------------------------------------------------------
+    void CreateSingleTetrominoCube(BHandle* _ppMesh);
+
 };
 
