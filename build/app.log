@@ -1,5 +1,0 @@
-﻿  CTetromino.cpp
-E:\DEV\gdv1-projekt\project\app\CTetromino.cpp(101,15): warning C4244: "Initialisierung": Konvertierung von "double" in "float", möglicher Datenverlust
-E:\DEV\gdv1-projekt\project\app\CTetromino.cpp(125,48): warning C4244: "=": Konvertierung von "int" in "float", möglicher Datenverlust
-E:\DEV\gdv1-projekt\project\app\CTetromino.cpp(135,46): warning C4244: "=": Konvertierung von "int" in "float", möglicher Datenverlust
-  app.vcxproj -> E:\DEV\gdv1-projekt\bin\appd.exe
