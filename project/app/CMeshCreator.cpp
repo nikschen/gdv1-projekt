@@ -29,6 +29,15 @@ void CMeshCreator::CreateFlatLinedTetromino(BHandle* _ppMesh)
             {    2 * edgeLength,      0 * edgeLength,     0 * edgeLength},
         };
 
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+        };
+
         // -----------------------------------------------------------------------------
         // Define the topology of the mesh via indices. An index addresses a vertex from
         // the array above. Three indices represent one triangle. When defining the 
@@ -47,11 +56,11 @@ void CMeshCreator::CreateFlatLinedTetromino(BHandle* _ppMesh)
 
         float colors[][4] =
         {
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f, 240.0f, 240.0f, 1.0f, },        // Color of vertex 4.
+            { 0.0f/255.0f, 240.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 0.0f/255.0f, 240.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 0.0f/255.0f, 240.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 0.0f/255.0f, 240.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 0.0f/255.0f, 240.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 4.
         };
 
         // -----------------------------------------------------------------------------
@@ -65,7 +74,7 @@ void CMeshCreator::CreateFlatLinedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                          
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 5;
@@ -83,9 +92,19 @@ void CMeshCreator::CreateSquareTetromino(BHandle* _ppMesh)
         float vertices[][3] =
         {
             {    0 * edgeLength,       0 * edgeLength,     0 * edgeLength},
-            {    0 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
-            {    2 * edgeLength,       0 * edgeLength,     0 * edgeLength},
+            {   -1 * edgeLength,       0 * edgeLength,     0 * edgeLength},
+            {   -1 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
+            {    1 * edgeLength,      -2 * edgeLength,     0 * edgeLength},
+            {    1 * edgeLength,       0 * edgeLength,     0 * edgeLength},
+        };
+
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
         };
 
         // -----------------------------------------------------------------------------
@@ -99,16 +118,18 @@ void CMeshCreator::CreateSquareTetromino(BHandle* _ppMesh)
         // -----------------------------------------------------------------------------
         int indices[][3] =
         {
-            {  3,  0,  1, },
-            {  3,  1,  2, },
+            {  0,  1,  2, },
+            {  0,  2,  3, },
+            {  0,  3,  4, },
         };
 
         float colors[][4] =
         {
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 2.
-            { 242.0f, 242.0f, 0.0f, 1.0f, },        // Color of vertex 3.
+            { 250.0f/255.0f, 250.0f/255.0f, 0.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 250.0f/255.0f, 250.0f/255.0f, 0.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 250.0f/255.0f, 250.0f/255.0f, 0.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 250.0f/255.0f, 250.0f/255.0f, 0.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 250.0f/255.0f, 250.0f/255.0f, 0.0f/255.0f, 1.0f, },        // Color of vertex 3.
         };
 
         // -----------------------------------------------------------------------------
@@ -122,11 +143,11 @@ void CMeshCreator::CreateSquareTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                          
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
-        MeshInfo.m_NumberOfVertices = 4;
-        MeshInfo.m_NumberOfIndices = 6;
+        MeshInfo.m_NumberOfVertices = 5;
+        MeshInfo.m_NumberOfIndices = 9;
         MeshInfo.m_pIndices = &indices[0][0];
         MeshInfo.m_pTexture = nullptr;
 
@@ -148,6 +169,18 @@ void CMeshCreator::CreateTShapedTetromino(BHandle* _ppMesh)
             {     1 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //6
             {     0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //7
 
+        };
+
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
         };
 
         // -----------------------------------------------------------------------------
@@ -173,14 +206,14 @@ void CMeshCreator::CreateTShapedTetromino(BHandle* _ppMesh)
 
         float colors[][4] =
         {
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 0.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 1.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 2.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 3.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 4.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 5.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 6.
-            { 160.0f,  0.0f,   240.0f, 1.0f, },        // Color of vertex 7.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 4.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 5.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 6.
+            { 160.0f/255.0f,  0.0f/255.0f,   240.0f/255.0f, 1.0f, },        // Color of vertex 7.
         };
 
         // -----------------------------------------------------------------------------
@@ -194,7 +227,7 @@ void CMeshCreator::CreateTShapedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                         
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 8;
@@ -219,6 +252,16 @@ void CMeshCreator::CreateLeftHandedLShapedTetromino(BHandle* _ppMesh)
             {      2 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //5
         };
 
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+        };
+
         // -----------------------------------------------------------------------------
         // Define the topology of the mesh via indices. An index addresses a vertex from
         // the array above. Three indices represent one triangle. When defining the 
@@ -239,12 +282,12 @@ void CMeshCreator::CreateLeftHandedLShapedTetromino(BHandle* _ppMesh)
 
         float colors[][4] =
         {
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 4.
-            { 0.0f, 0.0f, 240.0f, 1.0f, },        // Color of vertex 5.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 4.
+            { 0.0f/255.0f, 0.0f/255.0f, 240.0f/255.0f, 1.0f, },        // Color of vertex 5.
         };
 
         // -----------------------------------------------------------------------------
@@ -258,7 +301,7 @@ void CMeshCreator::CreateLeftHandedLShapedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                          
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 6;
@@ -284,6 +327,16 @@ void CMeshCreator::CreateRightHandedLShapedTetromino(BHandle* _ppMesh)
 
         };
 
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+        };
+
         // -----------------------------------------------------------------------------
         // Define the topology of the mesh via indices. An index addresses a vertex from
         // the array above. Three indices represent one triangle. When defining the 
@@ -301,14 +354,15 @@ void CMeshCreator::CreateRightHandedLShapedTetromino(BHandle* _ppMesh)
             {  0,  4,  5, },
         };
 
+
         float colors[][4] =
         {
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 2.
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 3.
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 4.
-            { 242.0f, 121.0f, 0.0f, 1.0f, },        // Color of vertex 5.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 0.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 1.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 2.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 3.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 4.
+            { 240.0f/255.0f, 160.0f/255.0f, 0.0f/255.0f, 1.0f },        // Color of vertex 5.
         };
 
         // -----------------------------------------------------------------------------
@@ -322,7 +376,7 @@ void CMeshCreator::CreateRightHandedLShapedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                          
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 6;
@@ -349,6 +403,18 @@ void CMeshCreator::CreateLeftHandedZShapedTetromino(BHandle* _ppMesh)
             {       0 * edgeLength,       1 * edgeLength,     0 * edgeLength}, //7
         };
 
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+        };
+
         // -----------------------------------------------------------------------------
         // Define the topology of the mesh via indices. An index addresses a vertex from
         // the array above. Three indices represent one triangle. When defining the 
@@ -372,14 +438,14 @@ void CMeshCreator::CreateLeftHandedZShapedTetromino(BHandle* _ppMesh)
 
         float colors[][4] =
         {
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 2.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 3.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 4.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 5.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 6.
-            { 0.0f,   240.0f,  0.0f, 1.0f, },        // Color of vertex 7.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 4.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 5.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 6.
+            { 0.0f/255.0f,   240.0f/255.0f,  0.0f/255.0f, 1.0f, },        // Color of vertex 7.
         };
 
         // -----------------------------------------------------------------------------
@@ -393,7 +459,7 @@ void CMeshCreator::CreateLeftHandedZShapedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                        
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 8;
@@ -420,6 +486,18 @@ void CMeshCreator::CreateRightHandedZShapedTetromino(BHandle* _ppMesh)
             {       1 * edgeLength,       0 * edgeLength,     0 * edgeLength}, //7
         };
 
+        float normals[][3] =
+        {
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+            { 0, 0, -1 },
+        };
+
         // -----------------------------------------------------------------------------
         // Define the topology of the mesh via indices. An index addresses a vertex from
         // the array above. Three indices represent one triangle. When defining the 
@@ -444,14 +522,14 @@ void CMeshCreator::CreateRightHandedZShapedTetromino(BHandle* _ppMesh)
 
         float colors[][4] =
         {
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 0.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 1.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 2.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 3.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 4.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 5.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 6.
-            { 240.0f,  0.0f,   0.0f, 1.0f, },        // Color of vertex 7.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 0.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 1.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 2.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 3.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 4.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 5.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 6.
+            { 240.0f/255.0f,  0.0f/255.0f,   0.0f/255.0f, 1.0f, },        // Color of vertex 7.
         };
 
         // -----------------------------------------------------------------------------
@@ -465,7 +543,7 @@ void CMeshCreator::CreateRightHandedZShapedTetromino(BHandle* _ppMesh)
         SMeshInfo MeshInfo;
 
         MeshInfo.m_pVertices = &vertices[0][0];
-        MeshInfo.m_pNormals = nullptr;                          // No normals
+        MeshInfo.m_pNormals = &normals[0][0];                          
         MeshInfo.m_pColors = &colors[0][0];
         MeshInfo.m_pTexCoords = nullptr;
         MeshInfo.m_NumberOfVertices = 8;
@@ -488,6 +566,14 @@ void CMeshCreator::CreateLeftAndRightLevelBorder(BHandle* _ppMesh)
         {   -5 * edgeLength,     25 * edgeLength,     0 * edgeLength},
     };
 
+    float normals[][3] =
+    {
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+    };
+
     // -----------------------------------------------------------------------------
     // Define the topology of the mesh via indices. An index addresses a vertex from
     // the array above. Three indices represent one triangle. When defining the 
@@ -505,10 +591,10 @@ void CMeshCreator::CreateLeftAndRightLevelBorder(BHandle* _ppMesh)
 
     float colors[][4] =
     {
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 2.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 3.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 0.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 1.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 2.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 3.
     };
 
     // -----------------------------------------------------------------------------
@@ -522,7 +608,7 @@ void CMeshCreator::CreateLeftAndRightLevelBorder(BHandle* _ppMesh)
     SMeshInfo MeshInfo;
 
     MeshInfo.m_pVertices = &vertices[0][0];
-    MeshInfo.m_pNormals = nullptr;                          // No normals
+    MeshInfo.m_pNormals = &normals[0][0];                       
     MeshInfo.m_pColors = &colors[0][0];
     MeshInfo.m_pTexCoords = nullptr;
     MeshInfo.m_NumberOfVertices = 4;
@@ -545,6 +631,14 @@ void CMeshCreator::CreateTopAndBottomLevelBorder(BHandle* _ppMesh)
         {   50 * edgeLength,     25 * edgeLength,     0 * edgeLength},
     };
 
+    float normals[][3] =
+    {
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+    };
+
     // -----------------------------------------------------------------------------
     // Define the topology of the mesh via indices. An index addresses a vertex from
     // the array above. Three indices represent one triangle. When defining the 
@@ -562,10 +656,10 @@ void CMeshCreator::CreateTopAndBottomLevelBorder(BHandle* _ppMesh)
 
     float colors[][4] =
     {
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 2.
-        { 200.0f, 200.0f, 0.0f, 1.0f, },        // Color of vertex 3.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 0.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 1.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 2.
+        { 80.0f/255.0f, 80.0f/255.0f, 80.0f/255.0f, 1.0f, },        // Color of vertex 3.
     };
 
     // -----------------------------------------------------------------------------
@@ -579,7 +673,7 @@ void CMeshCreator::CreateTopAndBottomLevelBorder(BHandle* _ppMesh)
     SMeshInfo MeshInfo;
 
     MeshInfo.m_pVertices = &vertices[0][0];
-    MeshInfo.m_pNormals = nullptr;                          // No normals
+    MeshInfo.m_pNormals = &normals[0][0];
     MeshInfo.m_pColors = &colors[0][0];
     MeshInfo.m_pTexCoords = nullptr;
     MeshInfo.m_NumberOfVertices = 4;
@@ -619,10 +713,10 @@ void CMeshCreator::CreateSingleTetrominoCube(BHandle* _ppMesh)
 
     float colors[][4] =
     {
-        { 255.0f, 255.0f, 255.0f, 1.0f, },        // Color of vertex 0.
-        { 255.0f, 255.0f, 255.0f, 1.0f, },        // Color of vertex 1.
-        { 255.0f, 255.0f, 255.0f, 1.0f, },        // Color of vertex 2.
-        { 255.0f, 255.0f, 255.0f, 1.0f, },        // Color of vertex 3.
+        { 255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f, 1.0f, },        // Color of vertex 0.
+        { 255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f, 1.0f, },        // Color of vertex 1.
+        { 255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f, 1.0f, },        // Color of vertex 2.
+        { 255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f, 1.0f, },        // Color of vertex 3.
     };
 
     // -----------------------------------------------------------------------------

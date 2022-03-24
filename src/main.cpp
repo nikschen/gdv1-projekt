@@ -39,6 +39,10 @@ namespace
             BHandle m_pActiveTetrominoMesh;
             BHandle m_pSingleTetrominoCubeMesh;
 
+            //Textures
+            BHandle m_pWelcomeScreenTexture;
+            BHandle m_pGameOverScreenTexture;
+
             //Gameobjects
             CTetromino* m_pActiveTetromino;
             bool m_area[20][10]; //true if occupied, false if not occupied
@@ -50,13 +54,19 @@ namespace
             //Helper variables
             time_t m_lastTimeStemp;
             time_t m_gameTickLength; //in ms; determines game speed
+            bool m_gameOver; 
             
         //-----------------------------------------------------------------------------
         // own functions
         //-----------------------------------------------------------------------------
            
+            //Logic
             void CheckForCollisions();
+            void CheckForGameOver();
             void ChooseRandomTetromino();
+            void RemoveFullRows();
+
+            //Graphics
             void DrawLevelBorders();
             void DrawOccupationBlocks();
             void SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape);
@@ -75,6 +85,8 @@ namespace
             virtual bool InternOnShutdown();
             virtual bool InternOnCreateMeshes();
             virtual bool InternOnReleaseMeshes();
+            virtual bool InternOnCreateTextures();
+            virtual bool InternOnReleaseTextures();
             virtual bool InternOnResize(int _Width, int _Height);
             virtual bool InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown);
             virtual bool InternOnUpdate();
@@ -107,6 +119,7 @@ namespace
     , m_bottomBorderY                    (-20)
     , m_lastTimeStemp                    (0)
     , m_gameTickLength                   (500)
+    , m_gameOver                         (false)
     , m_FieldOfViewY                     (60)
     {
     }
@@ -130,6 +143,23 @@ namespace
 
         SetClearColor(ClearColor);
 
+        // -----------------------------------------------------------------------------
+        // Define the position of the light source in 3D space. The fixed function 
+        // pipeline of YoshiX only supports one light source.
+        // -----------------------------------------------------------------------------
+        float LightPosition[3] = { 5.0f, -10.0f, -20.0f, };
+
+        SetLightPosition(LightPosition);
+
+        // -----------------------------------------------------------------------------
+        // Define the ambient, diffuse, and specular color of the light source. 
+        // -----------------------------------------------------------------------------
+        float LightAmbientColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f, };
+        float LightDiffuseColor[4] = { 0.6f, 0.6f, 0.6f, 1.0f, };
+        float LightSpecularColor[4] = { 0.9f, 0.9f, 0.9f, 1.0f, };
+
+        SetLightColor(LightAmbientColor, LightDiffuseColor, LightSpecularColor, 5);
+
         return true;
     }
 
@@ -140,7 +170,30 @@ namespace
     
 #pragma endregion
 
-#pragma region meshCreation
+#pragma region meshAndTextureCreation
+
+    bool CApplication::InternOnCreateTextures()
+    {
+        // -----------------------------------------------------------------------------
+        // Load an image from the given path and create a YoshiX texture representing
+        // the image.
+        // -----------------------------------------------------------------------------
+        //CreateTexture("..\\data\\images\\welcome_screen.dds", &m_pWelcomeScreenTexture);
+        //CreateTexture("..\\data\\images\\game_over_screen.dds", &m_pGameOverScreenTexture);
+
+        return true;
+    }
+
+    bool CApplication::InternOnReleaseTextures()
+    {
+        // -----------------------------------------------------------------------------
+        // Important to release the texture again when the application is shut down.
+        // -----------------------------------------------------------------------------
+        //ReleaseTexture(m_pWelcomeScreenTexture);
+        //ReleaseTexture(m_pGameOverScreenTexture);
+
+        return true;
+    }
 
     bool CApplication::InternOnCreateMeshes()
     {
@@ -219,6 +272,13 @@ namespace
 
 
     }
+
+    void CApplication::CheckForGameOver()
+    {
+        if (m_area[0][3] || m_area[0][4] || m_area[0][5] || m_area[0][6]) m_gameOver = true;
+        
+    }
+
     void CApplication::ChooseRandomTetromino()
     {
         //zahl zwischen 0 und 6
@@ -237,7 +297,7 @@ namespace
                 m_pActiveTetrominoMesh = m_pFlatLineTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::SQUARE:
-                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(0.5,-0.5), CPoint(1.5,-0.5), CPoint(0.5,-1.5), CPoint(1.5,-1.5), 0.0f, 2.0f, 0.0f, 2.0f);
+                m_pActiveTetromino = new CTetromino(_tetrominoShape, CPoint(-0.5,-0.5), CPoint(0.5,-0.5), CPoint(-0.5,-1.5), CPoint(0.5,-1.5), 1.0f, 1.0f, 0.0f, 2.0f);
                 m_pActiveTetrominoMesh = m_pSquareTetrominoMesh;
                 break;
             case CTetromino::ETetrominoShape::T_SHAPED:
@@ -274,8 +334,6 @@ namespace
             m_area[rowOfArea][columnOfArea] = true;
         }
     }
-
-    
 
     void CApplication::DrawLevelBorders()
     {
@@ -318,6 +376,40 @@ namespace
         }
     }
 
+    void CApplication::RemoveFullRows()
+    {
+        int row, column;
+        for (row = 19; row >= 0; row--)
+        {
+            int occupiedFields = 0;
+            for (column = 0; column < 10; column++)
+            {
+                if (m_area[row][column]) occupiedFields++;
+                else break;
+            }
+
+            if (occupiedFields == 10)
+            {
+                //move all rows until lowest rowToBeRemoved except first row (idx 0)
+                for (int rowToBeRemoved = row, idxOfRowTeBeMovedDown = rowToBeRemoved - 1; idxOfRowTeBeMovedDown >= 0; rowToBeRemoved--, idxOfRowTeBeMovedDown--)
+                {
+                    for (int columnToBeCopied = 0; columnToBeCopied < 10; columnToBeCopied++)
+                    {
+                        m_area[rowToBeRemoved][columnToBeCopied] = m_area[idxOfRowTeBeMovedDown][columnToBeCopied];
+
+                    }
+                }
+
+                //reset first row to false after moving all rows
+                for (int columnToBeCopied = 0; columnToBeCopied < 10; columnToBeCopied++)
+                {
+                    m_area[0][columnToBeCopied] = false;
+                }
+            }
+
+        }
+    }
+
     bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
     {
         if (_IsKeyDown && (m_pActiveTetromino!=nullptr || _Key==ESC))
@@ -346,6 +438,7 @@ namespace
                 case 'R': //Reset Game
                     std::fill(&m_area[0][0], &m_area[0][0] + sizeof(m_area), false);
                     m_pActiveTetromino=nullptr;
+                    m_gameOver = false;
                     break;
                 case ESC: //ESC key -> Nr 27
                     StopApplication();
@@ -402,41 +495,51 @@ namespace
 
     bool CApplication::InternOnFrame()
     {
-        float WorldMatrix[16];
-        float RotationMatrix[16];
-        float TranslationMatrix[16];
-
-        DrawLevelBorders();
         
-        // -----------------------------------------------------------------------------
-        // Set the position of the mesh in the world and draw it.
-        // -----------------------------------------------------------------------------
-        if (m_pActiveTetromino==nullptr)
+        if (!m_gameOver)
         {
-            ChooseRandomTetromino();
-            m_lastTimeStemp = (time_t)time(0);
+            float WorldMatrix[16];
+            float RotationMatrix[16];
+            float TranslationMatrix[16];
+
+            DrawLevelBorders();
+
+            if (m_pActiveTetromino == nullptr)
+            {
+                ChooseRandomTetromino();
+                m_lastTimeStemp = (time_t)time(0);
+            }
+            else
+            {
+                time_t timeDifference = ((time_t)time(0) - m_lastTimeStemp) * 1000;
+                if (timeDifference >= m_gameTickLength)
+                {
+                    m_lastTimeStemp = (time_t)time(0);
+                    m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
+                }
+            }
+
+            CheckForCollisions();
+
+            if (m_pActiveTetromino != nullptr)
+            {
+                GetRotationZMatrix(m_pActiveTetromino->GetRotationZ(), RotationMatrix);
+                GetTranslationMatrix(m_pActiveTetromino->GetMiddleX(), m_pActiveTetromino->GetMiddleY(), 0.0f, TranslationMatrix);
+                MulMatrix(RotationMatrix, TranslationMatrix, WorldMatrix);
+                SetWorldMatrix(WorldMatrix);
+                DrawMesh(m_pActiveTetrominoMesh);
+            }
+            RemoveFullRows();
+            DrawOccupationBlocks();
+            CheckForGameOver();
         }
         else
         {
-            time_t timeDifference=((time_t)time(0)- m_lastTimeStemp)*1000;
-            if (timeDifference >= m_gameTickLength)
-            {
-                m_lastTimeStemp = (time_t)time(0);
-                m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
-            } 
+            
+            std::cout << "Game Over" << std::endl;
+            system("pause");
         }
-        CheckForCollisions();
-
-        if (m_pActiveTetromino != nullptr)
-        {
-            GetRotationZMatrix(m_pActiveTetromino->GetRotationZ(),RotationMatrix);
-            GetTranslationMatrix(m_pActiveTetromino->GetMiddleX(), m_pActiveTetromino->GetMiddleY(), 0.0f, TranslationMatrix);
-            MulMatrix(RotationMatrix, TranslationMatrix, WorldMatrix);
-            SetWorldMatrix(WorldMatrix);
-            DrawMesh(m_pActiveTetrominoMesh);
-        }
-        DrawOccupationBlocks();
-
+        
         return true;
     }
 
@@ -448,5 +551,5 @@ void main()
 {
     CApplication Application;
 
-    RunApplication(600, 800, "YoshiX Tetris", &Application);
+    RunApplication(800, 800, "YoshiX Tetris", &Application);
 }

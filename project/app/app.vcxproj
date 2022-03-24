@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\examples\quad_textured.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="CFieldOfArea.cpp" />
     <ClCompile Include="CMeshCreator.cpp" />

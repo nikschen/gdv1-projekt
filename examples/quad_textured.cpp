@@ -56,7 +56,7 @@ namespace
         // Load an image from the given path and create a YoshiX texture representing
         // the image.
         // -----------------------------------------------------------------------------
-        CreateTexture("..\\data\\images\\wall.dds", &m_pQuadTexture);
+        CreateTexture("wall.dds", &m_pQuadTexture);
 
         return true;
     }
@@ -208,7 +208,7 @@ namespace
     }
 } // namespace
 
-void main()
+void asdfmain()
 {
     CApplication Application;
 

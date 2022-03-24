@@ -60,9 +60,9 @@ namespace
 
         static float s_TriangleColors[][4] =
         {
-            { 1.0f, 0.0f, 0.0f, 1.0f, },        // Color of vertex 0.
-            { 0.0f, 1.0f, 0.0f, 1.0f, },        // Color of vertex 1.
-            { 0.0f, 0.0f, 1.0f, 1.0f, },        // Color of vertex 2.
+            { 0.73f, 0.73f, 0.73f, 1.0f, },        // Color of vertex 0.
+            { 0.73f, 0.73f, 0.73f, 1.0f, },        // Color of vertex 0.
+            { 0.73f, 0.73f, 0.73f, 1.0f, },        // Color of vertex 0.
         };
 
         // -----------------------------------------------------------------------------
