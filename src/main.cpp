@@ -1,11 +1,12 @@
 #include <algorithm>
 #include <iostream>
 #include "yoshix_fix_function.h"
-#include "../project/app/CFieldOfArea.h"
-#include "../project/app/CTetromino.h"
-#include "../project/app/CMeshCreator.h"
+#include "CFieldOfArea.h"
+#include "CMeshCreator.h"
+#include "CTetromino.h"
 
 using namespace gfx;
+const int ENTER = 13;
 const int ESC = 27;
 const int ARROW_KEY_LEFT = 37;
 const int ARROW_KEY_RIGHT = 39;
@@ -38,6 +39,8 @@ namespace
             BHandle m_pRightHandedZShapedTetrominoMesh;
             BHandle m_pActiveTetrominoMesh;
             BHandle m_pSingleTetrominoCubeMesh;
+            BHandle m_pWelcomeScreenBannerMesh;
+            BHandle m_pGameOverScreenBannerMesh;
 
             //Textures
             BHandle m_pWelcomeScreenTexture;
@@ -54,7 +57,8 @@ namespace
             //Helper variables
             time_t m_lastTimeStemp;
             time_t m_gameTickLength; //in ms; determines game speed
-            bool m_gameOver; 
+            bool m_gameOver;
+            bool m_showWelcomeScreen;
             
         //-----------------------------------------------------------------------------
         // own functions
@@ -65,6 +69,7 @@ namespace
             void CheckForGameOver();
             void ChooseRandomTetromino();
             void RemoveFullRows();
+            void ResetGame();
 
             //Graphics
             void DrawLevelBorders();
@@ -110,16 +115,21 @@ namespace
     , m_pRightHandedLShapedTetrominoMesh (nullptr)
     , m_pLeftHandedZShapedTetrominoMesh  (nullptr)
     , m_pRightHandedZShapedTetrominoMesh (nullptr)
-    , m_pActiveTetromino                 (nullptr)
-    , m_area                             {false}
     , m_pActiveTetrominoMesh             (nullptr)
     , m_pSingleTetrominoCubeMesh         (nullptr)
+    , m_pWelcomeScreenBannerMesh         (nullptr)
+    , m_pGameOverScreenBannerMesh        (nullptr)
+    , m_pWelcomeScreenTexture            (nullptr)
+    , m_pGameOverScreenTexture           (nullptr)
+    , m_pActiveTetromino                 (nullptr)
+    , m_area                             {false}
     , m_leftBorderX                      (0)
     , m_rightBorderX                     (10)
     , m_bottomBorderY                    (-20)
     , m_lastTimeStemp                    (0)
     , m_gameTickLength                   (500)
     , m_gameOver                         (false)
+    , m_showWelcomeScreen                (true)
     , m_FieldOfViewY                     (60)
     {
     }
@@ -178,8 +188,8 @@ namespace
         // Load an image from the given path and create a YoshiX texture representing
         // the image.
         // -----------------------------------------------------------------------------
-        //CreateTexture("..\\data\\images\\welcome_screen.dds", &m_pWelcomeScreenTexture);
-        //CreateTexture("..\\data\\images\\game_over_screen.dds", &m_pGameOverScreenTexture);
+        CreateTexture("..\\..\\data\\images\\welcome_screen.dds", &m_pWelcomeScreenTexture);
+        CreateTexture("..\\..\\data\\images\\game_over_screen.dds", &m_pGameOverScreenTexture);
 
         return true;
     }
@@ -189,8 +199,8 @@ namespace
         // -----------------------------------------------------------------------------
         // Important to release the texture again when the application is shut down.
         // -----------------------------------------------------------------------------
-        //ReleaseTexture(m_pWelcomeScreenTexture);
-        //ReleaseTexture(m_pGameOverScreenTexture);
+        ReleaseTexture(m_pWelcomeScreenTexture);
+        ReleaseTexture(m_pGameOverScreenTexture);
 
         return true;
     }
@@ -208,6 +218,8 @@ namespace
         meshCreator.CreateLeftAndRightLevelBorder(&m_pLeftAndRightLevelBorderMesh);
         meshCreator.CreateTopAndBottomLevelBorder(&m_pTopAndBottomLevelBorderMesh);
         meshCreator.CreateSingleTetrominoCube(&m_pSingleTetrominoCubeMesh);
+        meshCreator.CreateWelcomeScreenBanner(&m_pWelcomeScreenBannerMesh, &m_pWelcomeScreenTexture);
+        meshCreator.CreateGameOverScreenBanner(&m_pGameOverScreenBannerMesh, &m_pGameOverScreenTexture);
         return true;
     }
 
@@ -223,6 +235,8 @@ namespace
         ReleaseMesh(m_pLeftAndRightLevelBorderMesh);
         ReleaseMesh(m_pTopAndBottomLevelBorderMesh);
         ReleaseMesh(m_pSingleTetrominoCubeMesh);
+        ReleaseMesh(m_pWelcomeScreenBannerMesh);
+        ReleaseMesh(m_pGameOverScreenBannerMesh);
         return true;
     }
 
@@ -410,9 +424,16 @@ namespace
         }
     }
 
+    void CApplication::ResetGame()
+    {
+        std::fill(&m_area[0][0], &m_area[0][0] + sizeof(m_area), false);
+        m_pActiveTetromino = nullptr;
+        m_gameOver = false;
+    }
+
     bool CApplication::InternOnKeyEvent(unsigned int _Key, bool _IsKeyDown, bool _IsAltDown)
     {
-        if (_IsKeyDown && (m_pActiveTetromino!=nullptr || _Key==ESC))
+        if (_IsKeyDown && (m_pActiveTetromino!=nullptr || _Key==ESC || _Key=='R' ||_Key==ENTER))
         {
             switch (_Key)
             {
@@ -436,9 +457,10 @@ namespace
                     m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
                     break;
                 case 'R': //Reset Game
-                    std::fill(&m_area[0][0], &m_area[0][0] + sizeof(m_area), false);
-                    m_pActiveTetromino=nullptr;
-                    m_gameOver = false;
+                    ResetGame();
+                    break;
+                case ENTER:
+                    m_showWelcomeScreen = false;
                     break;
                 case ESC: //ESC key -> Nr 27
                     StopApplication();
@@ -495,8 +517,14 @@ namespace
 
     bool CApplication::InternOnFrame()
     {
-        
-        if (!m_gameOver)
+        if (m_showWelcomeScreen)
+        {
+            float TranslationMatrix[16];
+            GetTranslationMatrix(-5.0f, 0.0f, 0.0f, TranslationMatrix);
+            SetWorldMatrix(TranslationMatrix);
+            DrawMesh(m_pWelcomeScreenBannerMesh);
+        }
+        else if (!m_gameOver)
         {
             float WorldMatrix[16];
             float RotationMatrix[16];
@@ -535,9 +563,10 @@ namespace
         }
         else
         {
-            
-            std::cout << "Game Over" << std::endl;
-            system("pause");
+            float TranslationMatrix[16];
+            GetTranslationMatrix(-5.0f, 0.0f, 0.0f, TranslationMatrix);
+            SetWorldMatrix(TranslationMatrix);
+            DrawMesh(m_pGameOverScreenBannerMesh);
         }
         
         return true;

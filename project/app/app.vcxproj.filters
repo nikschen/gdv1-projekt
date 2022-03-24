@@ -6,7 +6,6 @@
     <ClCompile Include="CMeshCreator.cpp" />
     <ClCompile Include="CFieldOfArea.cpp" />
     <ClCompile Include="CPoint.cpp" />
-    <ClCompile Include="..\..\examples\quad_textured.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTetromino.h" />

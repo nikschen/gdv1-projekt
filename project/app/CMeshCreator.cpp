@@ -696,6 +696,14 @@ void CMeshCreator::CreateSingleTetrominoCube(BHandle* _ppMesh)
         {    1 * edgeLength,      0 * edgeLength,     0 * edgeLength},
     };
 
+    float normals[][3] =
+    {
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+    };
+
     // -----------------------------------------------------------------------------
     // Define the topology of the mesh via indices. An index addresses a vertex from
     // the array above. Three indices represent one triangle. When defining the 
@@ -730,7 +738,7 @@ void CMeshCreator::CreateSingleTetrominoCube(BHandle* _ppMesh)
     SMeshInfo MeshInfo;
 
     MeshInfo.m_pVertices = &vertices[0][0];
-    MeshInfo.m_pNormals = nullptr;                          // No normals
+    MeshInfo.m_pNormals = &normals[0][0];                          
     MeshInfo.m_pColors = &colors[0][0];
     MeshInfo.m_pTexCoords = nullptr;
     MeshInfo.m_NumberOfVertices = 4;
@@ -740,3 +748,135 @@ void CMeshCreator::CreateSingleTetrominoCube(BHandle* _ppMesh)
 
     CreateMesh(MeshInfo, _ppMesh);
 }
+
+void CMeshCreator::CreateWelcomeScreenBanner(BHandle* _ppMesh, BHandle* _ppTexture)
+{
+    //x,y,z x=horizontal y=vertical z=depth
+    float vertices[][3] =
+    {
+        {    0.0f ,     0.0f,     0.0f },
+        {    0.0f ,    -20.0f,    0.0f },
+        {   20.0f ,    -20.0f,    0.0f },
+        {   20.0f ,     0.0f,     0.0f },
+    };
+
+    float normals[][3] =
+    {
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+    };
+
+    // -----------------------------------------------------------------------------
+    // Define the topology of the mesh via indices. An index addresses a vertex from
+    // the array above. Three indices represent one triangle. When defining the 
+    // triangles of a mesh imagine that you are standing in front of the triangle 
+    // and looking to the center of the triangle. If the mesh represents a closed
+    // body such as a Square, your view position has to be outside of the body. Now
+    // define the indices of the addressed vertices of the triangle in counter-
+    // clockwise order.
+    // -----------------------------------------------------------------------------
+    int indices[][3] =
+    {
+        {  3,  0,  1, },
+        {  3,  1,  2, },
+    };
+
+
+    float textureCoords[][2] =
+    {
+        { 0.0f, 0.0f, },                    // Texture coordinate of vertex 0.
+        { 0.0f, 1.0f, },                    // Texture coordinate of vertex 1.
+        { 1.0f, 1.0f, },                    // Texture coordinate of vertex 2.
+        { 1.0f, 0.0f, },                    // Texture coordinate of vertex 3.
+    };
+
+
+    // -----------------------------------------------------------------------------
+    // Define the mesh and its material. The material defines the look of the
+    // surface covering the mesh. If the material should contain normals, colors, or
+    // texture coordinates then their number has to match the number of vertices.
+    // If you do not support normals in a mesh, YoshiX will not apply lighting to
+    // this mesh. A textured mesh always has to contain texture coordinates and a
+    // handle to a texture. A mesh always has to contain vertices and indices.
+    // -----------------------------------------------------------------------------
+    SMeshInfo MeshInfo;
+
+    MeshInfo.m_pVertices = &vertices[0][0];
+    MeshInfo.m_pNormals = &normals[0][0];
+    MeshInfo.m_pColors = nullptr;
+    MeshInfo.m_pTexCoords = &textureCoords[0][0];
+    MeshInfo.m_NumberOfVertices = 4;
+    MeshInfo.m_NumberOfIndices = 6;
+    MeshInfo.m_pIndices = &indices[0][0];
+    MeshInfo.m_pTexture = *_ppTexture;
+
+    CreateMesh(MeshInfo, _ppMesh);
+}
+
+void CMeshCreator::CreateGameOverScreenBanner(BHandle* _ppMesh, BHandle* _ppTexture)
+{
+    //x,y,z x=horizontal y=vertical z=depth
+    float vertices[][3] =
+    {
+        {    0.0f ,     0.0f,     0.0f },
+        {    0.0f ,    -20.0f,    0.0f },
+        {   20.0f ,    -20.0f,    0.0f },
+        {   20.0f ,     0.0f,     0.0f },
+    };
+
+    float normals[][3] =
+    {
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+        { 0, 0, -1 },
+    };
+
+    // -----------------------------------------------------------------------------
+    // Define the topology of the mesh via indices. An index addresses a vertex from
+    // the array above. Three indices represent one triangle. When defining the 
+    // triangles of a mesh imagine that you are standing in front of the triangle 
+    // and looking to the center of the triangle. If the mesh represents a closed
+    // body such as a Square, your view position has to be outside of the body. Now
+    // define the indices of the addressed vertices of the triangle in counter-
+    // clockwise order.
+    // -----------------------------------------------------------------------------
+    int indices[][3] =
+    {
+        {  3,  0,  1, },
+        {  3,  1,  2, },
+    };
+
+    float textureCoords[][2] =
+    {
+        { 0.0f, 0.0f, },                    // Texture coordinate of vertex 0.
+        { 0.0f, 1.0f, },                    // Texture coordinate of vertex 1.
+        { 1.0f, 1.0f, },                    // Texture coordinate of vertex 2.
+        { 1.0f, 0.0f, },                    // Texture coordinate of vertex 3.
+    };
+
+
+    // -----------------------------------------------------------------------------
+    // Define the mesh and its material. The material defines the look of the
+    // surface covering the mesh. If the material should contain normals, colors, or
+    // texture coordinates then their number has to match the number of vertices.
+    // If you do not support normals in a mesh, YoshiX will not apply lighting to
+    // this mesh. A textured mesh always has to contain texture coordinates and a
+    // handle to a texture. A mesh always has to contain vertices and indices.
+    // -----------------------------------------------------------------------------
+    SMeshInfo MeshInfo;
+
+    MeshInfo.m_pVertices = &vertices[0][0];
+    MeshInfo.m_pNormals = &normals[0][0];
+    MeshInfo.m_pColors = nullptr;
+    MeshInfo.m_pTexCoords = &textureCoords[0][0];
+    MeshInfo.m_NumberOfVertices = 4;
+    MeshInfo.m_NumberOfIndices = 6;
+    MeshInfo.m_pIndices = &indices[0][0];
+    MeshInfo.m_pTexture = *_ppTexture;
+
+    CreateMesh(MeshInfo, _ppMesh);
+}
+

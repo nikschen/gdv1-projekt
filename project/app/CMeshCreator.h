@@ -81,5 +81,15 @@ public:
     // -----------------------------------------------------------------------------
     void CreateSingleTetrominoCube(BHandle* _ppMesh);
 
+    // -----------------------------------------------------------------------------
+    // Produces full screen banner for Welcome Screen
+    // -----------------------------------------------------------------------------
+    void CreateWelcomeScreenBanner(BHandle* _ppMesh, BHandle* _ppTexture);
+
+    // -----------------------------------------------------------------------------
+    // Produces full screen banner for Game Over Screen
+    // -----------------------------------------------------------------------------
+    void CreateGameOverScreenBanner(BHandle* _ppMesh, BHandle* _ppTexture);
+
 };
 
