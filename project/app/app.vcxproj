@@ -12,13 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp" />
-    <ClCompile Include="CFieldOfArea.cpp" />
     <ClCompile Include="CMeshCreator.cpp" />
     <ClCompile Include="CPoint.cpp" />
     <ClCompile Include="CTetromino.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CFieldOfArea.h" />
     <ClInclude Include="CMeshCreator.h" />
     <ClInclude Include="CPoint.h" />
     <ClInclude Include="CTetromino.h" />

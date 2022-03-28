@@ -4,6 +4,10 @@
 
 using namespace gfx;
 
+/*
+* Resembles a Tetromino with its shape, values and abilities
+* Only used while a tetromino is the active part of the game
+*/
 class CTetromino
 {
 public:

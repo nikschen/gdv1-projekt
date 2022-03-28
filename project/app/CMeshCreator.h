@@ -2,6 +2,9 @@
 #include <yoshix_fix_function.h>
 using namespace gfx;
 
+/*
+* Helper Class that creates the different meshes needed in the game
+*/
 class CMeshCreator
 {
 public:

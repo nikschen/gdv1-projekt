@@ -1,4 +1,8 @@
 #pragma once
+
+/*
+* Resembles 2D Point to track x and y values of middlepoints of the tetrominos single square parts
+*/
 class CPoint
 {
 public:

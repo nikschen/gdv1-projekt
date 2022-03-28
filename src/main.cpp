@@ -1,11 +1,12 @@
 #include <algorithm>
 #include <iostream>
-#include "yoshix_fix_function.h"
-#include "CFieldOfArea.h"
 #include "CMeshCreator.h"
 #include "CTetromino.h"
+#include "yoshix_fix_function.h"
 
 using namespace gfx;
+
+//Key Codes for several special keys
 const int ENTER = 13;
 const int ESC = 27;
 const int ARROW_KEY_LEFT = 37;
@@ -243,6 +244,11 @@ namespace
 #pragma endregion
 
 #pragma region gameLogic
+
+    // ------------------------------------------------------------------------------------
+    // Checks for Collisions of the active tetromino with the left, right and bottom border 
+    // as well as with other inactive tetromino fragments
+    // ------------------------------------------------------------------------------------
     void CApplication::CheckForCollisions()
     {
         if (m_pActiveTetromino->GetLeftMostX() < m_leftBorderX)
@@ -287,12 +293,20 @@ namespace
 
     }
 
+    // ------------------------------------------------------------------------------------
+    // Checks for occupation of the fields in the middle of the first row, where new tetrominos would spawn
+    // if occupied, the game is over
+    // ------------------------------------------------------------------------------------
     void CApplication::CheckForGameOver()
     {
         if (m_area[0][3] || m_area[0][4] || m_area[0][5] || m_area[0][6]) m_gameOver = true;
         
     }
 
+    // ------------------------------------------------------------------------------------
+    // Chooses a random Tetromino and calls the SpawnTetromino() function with the 
+    // corresponding shape
+    // ------------------------------------------------------------------------------------
     void CApplication::ChooseRandomTetromino()
     {
         //zahl zwischen 0 und 6
@@ -301,6 +315,10 @@ namespace
         SpawnTetromino(CTetromino::ETetrominoShape(randomNmb));
     }
 
+    // ------------------------------------------------------------------------------------
+    // Spawns a new tetromino with the given shape and assignes it to the m_pActiveTetromino
+    // also assignes the realted mesh to m_pActiveTetrominoMesh
+    // ------------------------------------------------------------------------------------
     void CApplication::SpawnTetromino(CTetromino::ETetrominoShape _tetrominoShape)
     {
         
@@ -337,6 +355,11 @@ namespace
         };
     }
 
+    // ------------------------------------------------------------------------------------
+    // Gets the middleponits coordinates of the current active tetromino and sets markers 
+    // for each single field at these coordinates of the m_area array, which resembles
+    // occupied fields
+    // ------------------------------------------------------------------------------------
     void CApplication::TurnIntoPieces()
     {
          CPoint middlePoints[4];
@@ -349,6 +372,9 @@ namespace
         }
     }
 
+    // ------------------------------------------------------------------------------------
+    // Draws the meshes of the different level borders at the top, bottom, left and ríght
+    // ------------------------------------------------------------------------------------
     void CApplication::DrawLevelBorders()
     {
         float WorldMatrix[16];
@@ -372,6 +398,10 @@ namespace
 
     }
 
+    // ------------------------------------------------------------------------------------
+    // Takes the m_area array and draws single white block meshes which resemble the
+    // occupied play area fields
+    // ------------------------------------------------------------------------------------
     void CApplication::DrawOccupationBlocks()
     {
         float translationMatrix[16];
@@ -390,6 +420,11 @@ namespace
         }
     }
 
+    // ------------------------------------------------------------------------------------
+    // Checks for full rows in the m_area array and deletes them while moving all rows above
+    // for one row down
+    // continues until no full rows are left
+    // ------------------------------------------------------------------------------------
     void CApplication::RemoveFullRows()
     {
         int row, column;
@@ -424,6 +459,11 @@ namespace
         }
     }
 
+    // ------------------------------------------------------------------------------------
+    // resets the m_area to all false, deletes the active tetromino variable and gameOver
+    // flag to false
+    // can be used to reset the game after losing the game or at any time while pressing 'R'
+    // ------------------------------------------------------------------------------------
     void CApplication::ResetGame()
     {
         std::fill(&m_area[0][0], &m_area[0][0] + sizeof(m_area), false);
@@ -517,14 +557,15 @@ namespace
 
     bool CApplication::InternOnFrame()
     {
-        if (m_showWelcomeScreen)
+
+        if (m_showWelcomeScreen) //true until enter is pressed once
         {
             float TranslationMatrix[16];
             GetTranslationMatrix(-5.0f, 0.0f, 0.0f, TranslationMatrix);
             SetWorldMatrix(TranslationMatrix);
             DrawMesh(m_pWelcomeScreenBannerMesh);
         }
-        else if (!m_gameOver)
+        else if (!m_gameOver) //the main game loop
         {
             float WorldMatrix[16];
             float RotationMatrix[16];
@@ -532,7 +573,7 @@ namespace
 
             DrawLevelBorders();
 
-            if (m_pActiveTetromino == nullptr)
+            if (m_pActiveTetromino == nullptr) //if no tetromino is active, either at the beginning or if the last one just turned into pieces on collision
             {
                 ChooseRandomTetromino();
                 m_lastTimeStemp = (time_t)time(0);
@@ -540,7 +581,7 @@ namespace
             else
             {
                 time_t timeDifference = ((time_t)time(0) - m_lastTimeStemp) * 1000;
-                if (timeDifference >= m_gameTickLength)
+                if (timeDifference >= m_gameTickLength) //like classic tetris, movement is instant, but tick wise like a clock
                 {
                     m_lastTimeStemp = (time_t)time(0);
                     m_pActiveTetromino->MoveTetromino(CTetromino::EMoveDirection::DOWN);
@@ -561,7 +602,7 @@ namespace
             DrawOccupationBlocks();
             CheckForGameOver();
         }
-        else
+        else //if game is lost
         {
             float TranslationMatrix[16];
             GetTranslationMatrix(-5.0f, 0.0f, 0.0f, TranslationMatrix);
